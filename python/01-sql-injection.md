@@ -1,138 +1,56 @@
-\# Python 01 — SQL Injection
+# Python — SQL Injection
 
+**OWASP:** A05:2025 — Injection
 
-
-\## OWASP Category
-
-A05:2025 — Injection
-
-
-
-\## Vulnerable Code
+## The Problem
 
 ```python
-
 import sqlite3
 
-
-
-def get\_user(username):
-
-&#x20;   conn = sqlite3.connect("users.db")
-
-&#x20;   cursor = conn.cursor()
-
-&#x20;   
-
-&#x20;   query = "SELECT \* FROM users WHERE username = '" + username + "'"
-
-&#x20;   cursor.execute(query)
-
-&#x20;   
-
-&#x20;   return cursor.fetchone()
-
-
-
-\# Example call
-
-user\_input = "admin' OR '1'='1"
-
-result = get\_user(user\_input)
-
-print(result)
-
+def get_user(username):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM users WHERE username = '" + username + "'"
+    cursor.execute(query)
+    
+    return cursor.fetchone()
 ```
 
+The issue is on this line:
 
+```python
+query = "SELECT * FROM users WHERE username = '" + username + "'"
+```
 
-\## What is wrong
+Whatever the user types gets glued directly into the SQL query. The database has no way to tell the difference between your query and the user's input — it just runs whatever ends up in that string.
 
-The `username` value from user input is concatenated directly into 
-
-the SQL query string. The database cannot distinguish between the 
-
-query structure and the user-supplied data.
-
-
-
-Submitting `admin' OR '1'='1` changes the query to:
-
-
+So if someone types `admin' OR '1'='1` the query becomes:
 
 ```sql
-
-SELECT \* FROM users WHERE username = 'admin' OR '1'='1'
-
+SELECT * FROM users WHERE username = 'admin' OR '1'='1'
 ```
 
+`'1'='1'` is always true. Every row comes back. From there an attacker can go further — dump data, modify records, or delete tables depending on database permissions.
 
-
-`'1'='1'` is always true — the query returns every row in the 
-
-users table regardless of the username supplied. An attacker 
-
-can also extend this to extract, modify, or delete data using 
-
-UNION-based or stacked query payloads.
-
-
-
-\## Secure Version
+## The Fix
 
 ```python
-
 import sqlite3
 
-
-
-def get\_user(username):
-
-&#x20;   conn = sqlite3.connect("users.db")
-
-&#x20;   cursor = conn.cursor()
-
-&#x20;   
-
-&#x20;   query = "SELECT \* FROM users WHERE username = ?"
-
-&#x20;   cursor.execute(query, (username,))
-
-&#x20;   
-
-&#x20;   return cursor.fetchone()
-
-
-
-\# Example call — same input, safe handling
-
-user\_input = "admin' OR '1'='1"
-
-result = get\_user(user\_input)
-
-print(result)
-
+def get_user(username):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM users WHERE username = ?"
+    cursor.execute(query, (username,))
+    
+    return cursor.fetchone()
 ```
 
+The `?` is a placeholder. The database gets the query structure first, locks it in, then receives the user's value separately via `cursor.execute(query, (username,))`.
 
+At that point it doesn't matter what the user types — the database already knows the structure. `admin' OR '1'='1` gets treated as a literal string to search for, not part of the query logic. No match found, nothing returned. Attack neutralised.
 
-\## Explanation
-
-The `?` placeholder separates the query structure from the data. 
-
-The database receives and compiles the query structure first — 
-
-before the value is supplied. When `username` is bound via 
-
-`cursor.execute(query, (username,))`, it is treated as a literal 
-
-string to match, not executable SQL syntax.
-
-
-
-Submitting `admin' OR '1'='1` now searches for a user whose 
-
-username is literally `admin' OR '1'='1` — which doesn't exist, 
-
-so the query returns nothing. The attack is neutralised.
-
+## One-liner for interviews
+*"SQL injection happens when user input gets concatenated into a query string — parameterised queries fix this by separating the query structure from the data before the database ever sees it."*

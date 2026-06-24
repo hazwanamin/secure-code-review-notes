@@ -1,12 +1,24 @@
+\## About this repository
+
+Code snippets in this repository were developed with AI assistance
+
+and reviewed, tested, and annotated by me as part of an AppSec
+
+learning portfolio. All analysis, root cause explanations, and
+
+fix rationale represent my own understanding.
+
+
+
 \# Secure Code Review Notes
 
 
 
-A reference repository documenting common insecure coding patterns 
+A reference repository documenting common insecure coding patterns
 
-across Python and JavaScript/Node.js — each with root cause analysis, 
+across Python and JavaScript/Node.js — each with root cause analysis,
 
-exploitation context, and a secure corrected version mapped to OWASP 
+exploitation context, and a secure corrected version mapped to OWASP
 
 Top 10 (2025).
 
@@ -33,4 +45,6 @@ Built as part of an AppSec transition portfolio.
 \- \[02 - JWT None Algorithm](./javascript/02-jwt-none-algorithm.md)
 
 \- \[03 - CORS Wildcard](./javascript/03-cors-wildcard.md)
+
+
 
