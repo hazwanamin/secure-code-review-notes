@@ -2,6 +2,33 @@
 
 **OWASP:** A07:2025 — Authentication Failures
 
+## How JWT none algo bypass works
+
+ATTACKER                          SERVER
+--------                          ------
+1. Login normally
+   → receives valid JWT
+   
+2. Decode header + payload
+   (just base64, no key needed)
+   
+3. Modify alg → "none"
+   Modify role → "admin"
+   Re-encode both parts
+   
+4. Assemble header.payload.
+   (empty signature)
+   
+5. Send forged token    --------→ 6. VULNERABLE: reads alg from
+                                     token, sees "none", skips
+                                     signature check, trusts payload
+                                     → grants admin access ❌
+                                     
+                                  6. FIXED: ignores token's alg,
+                                     enforces HS256, finds no valid
+                                     signature, rejects token
+                                     → access denied ✓
+
 ## The Problem
 
 ```javascript
